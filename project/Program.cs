@@ -17,6 +17,17 @@ namespace project
             builder.Services.AddOpenApi();
             builder.Services.AddControllers();
 
+            // Add this near the top with other service registrations
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAll",
+                    builder =>
+                    {
+                        builder.AllowAnyOrigin()
+                               .AllowAnyMethod()
+                               .AllowAnyHeader();
+                    });
+            });
             // Swagger classique pour Web API
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
@@ -44,6 +55,7 @@ namespace project
 
             app.UseHttpsRedirection();
 
+            app.UseCors("AllowAll");
             app.UseAuthorization();
 
 

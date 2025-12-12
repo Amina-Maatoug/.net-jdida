@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\21627\\source\\repos\\project\\project\\project.csproj": {}
+    "C:\\Users\\amina\\Source\\Repos\\.net\\project\\project.csproj": {}
   },
   "projects": {
-    "C:\\Users\\21627\\source\\repos\\project\\project\\project.csproj": {
+    "C:\\Users\\amina\\Source\\Repos\\.net\\project\\project.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\21627\\source\\repos\\project\\project\\project.csproj",
+        "projectUniqueName": "C:\\Users\\amina\\Source\\Repos\\.net\\project\\project.csproj",
         "projectName": "project",
-        "projectPath": "C:\\Users\\21627\\source\\repos\\project\\project\\project.csproj",
-        "packagesPath": "C:\\Users\\21627\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\21627\\source\\repos\\project\\project\\obj\\",
+        "projectPath": "C:\\Users\\amina\\Source\\Repos\\.net\\project\\project.csproj",
+        "packagesPath": "C:\\Users\\amina\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\amina\\Source\\Repos\\.net\\project\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\21627\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\amina\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -25,6 +25,8 @@
           "net9.0"
         ],
         "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
