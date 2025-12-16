@@ -3,16 +3,16 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace project.Migrations
+namespace project.Migrations.ApplicationDb
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class AddOrdonnancesToApplicationUser : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "Patients",
+                name: "Patient",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
@@ -22,53 +22,38 @@ namespace project.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Patients", x => x.Id);
+                    table.PrimaryKey("PK_Patient", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
-                name: "Pharmaciens",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Nom = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Email = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Password = table.Column<string>(type: "nvarchar(max)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Pharmaciens", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Ordonnances",
+                name: "Ordonnance",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Date = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    PharmacienId = table.Column<int>(type: "int", nullable: false),
+                    PharmacienId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     PatientId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Ordonnances", x => x.Id);
+                    table.PrimaryKey("PK_Ordonnance", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Ordonnances_Patients_PatientId",
-                        column: x => x.PatientId,
-                        principalTable: "Patients",
+                        name: "FK_Ordonnance_AspNetUsers_PharmacienId",
+                        column: x => x.PharmacienId,
+                        principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_Ordonnances_Pharmaciens_PharmacienId",
-                        column: x => x.PharmacienId,
-                        principalTable: "Pharmaciens",
+                        name: "FK_Ordonnance_Patient_PatientId",
+                        column: x => x.PatientId,
+                        principalTable: "Patient",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "Medicaments",
+                name: "Medicament",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
@@ -79,28 +64,28 @@ namespace project.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Medicaments", x => x.Id);
+                    table.PrimaryKey("PK_Medicament", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Medicaments_Ordonnances_OrdonnanceId",
+                        name: "FK_Medicament_Ordonnance_OrdonnanceId",
                         column: x => x.OrdonnanceId,
-                        principalTable: "Ordonnances",
+                        principalTable: "Ordonnance",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Medicaments_OrdonnanceId",
-                table: "Medicaments",
+                name: "IX_Medicament_OrdonnanceId",
+                table: "Medicament",
                 column: "OrdonnanceId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Ordonnances_PatientId",
-                table: "Ordonnances",
+                name: "IX_Ordonnance_PatientId",
+                table: "Ordonnance",
                 column: "PatientId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Ordonnances_PharmacienId",
-                table: "Ordonnances",
+                name: "IX_Ordonnance_PharmacienId",
+                table: "Ordonnance",
                 column: "PharmacienId");
         }
 
@@ -108,16 +93,13 @@ namespace project.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "Medicaments");
+                name: "Medicament");
 
             migrationBuilder.DropTable(
-                name: "Ordonnances");
+                name: "Ordonnance");
 
             migrationBuilder.DropTable(
-                name: "Patients");
-
-            migrationBuilder.DropTable(
-                name: "Pharmaciens");
+                name: "Patient");
         }
     }
 }

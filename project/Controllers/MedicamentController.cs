@@ -2,6 +2,7 @@
 using global::project.DTO;
 using global::project.Models;
 using global::project.Repositories;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 
@@ -9,6 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace project.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class MedicamentController : ControllerBase

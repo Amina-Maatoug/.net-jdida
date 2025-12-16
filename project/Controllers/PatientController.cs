@@ -1,10 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using project.DTO;
 using project.Models;
 using project.Repositories;
 
 namespace project.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class PatientController: ControllerBase
@@ -87,6 +89,9 @@ namespace project.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeletePatient(int id)
         {
+            var patient = await repository.GetByIdAsync(id);
+            if (patient == null) return NotFound("Patient not found");
+
             await repository.DeleteAsync(id);
             return NoContent();
         }

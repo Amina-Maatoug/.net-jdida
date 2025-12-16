@@ -7,17 +7,20 @@ namespace project.Models
     {
         [Key]
         public int Id { get; set; }
+
+        [Required]
         public DateTime Date { get; set; }
-        
-        public int PharmacienId { get; set; }
-        [ForeignKey("PharmacienId")]
+
+        // Simple string - PAS de clé étrangère ni navigation property!
+        [Required]
+        public string PharmacienId { get; set; }  // Juste l'ID, pas de relation
 
 
+        [Required]
         public int PatientId { get; set; }
         [ForeignKey("PatientId")]
-        public Patient? Patient { get; set; }
+        public Patient Patient { get; set; }
 
-        // Relation 1 ordonnance → plusieurs médicaments
         public List<Medicament> Medicaments { get; set; } = new List<Medicament>();
     }
 }

@@ -62,14 +62,13 @@ namespace project.Migrations
                     b.Property<int>("PatientId")
                         .HasColumnType("int");
 
-                    b.Property<int>("PharmacienId")
-                        .HasColumnType("int");
+                    b.Property<string>("PharmacienId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("PatientId");
-
-                    b.HasIndex("PharmacienId");
 
                     b.ToTable("Ordonnances");
                 });
@@ -94,31 +93,6 @@ namespace project.Migrations
                     b.ToTable("Patients");
                 });
 
-            modelBuilder.Entity("project.Models.Pharmacien", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Nom")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Password")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Pharmaciens");
-                });
-
             modelBuilder.Entity("project.Models.Medicament", b =>
                 {
                     b.HasOne("project.Models.Ordonnance", "Ordonnance")
@@ -138,12 +112,6 @@ namespace project.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("project.Models.Pharmacien", null)
-                        .WithMany("Ordonnances")
-                        .HasForeignKey("PharmacienId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.Navigation("Patient");
                 });
 
@@ -153,11 +121,6 @@ namespace project.Migrations
                 });
 
             modelBuilder.Entity("project.Models.Patient", b =>
-                {
-                    b.Navigation("Ordonnances");
-                });
-
-            modelBuilder.Entity("project.Models.Pharmacien", b =>
                 {
                     b.Navigation("Ordonnances");
                 });
