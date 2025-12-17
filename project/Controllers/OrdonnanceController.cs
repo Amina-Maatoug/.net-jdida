@@ -33,7 +33,6 @@ namespace project.Controllers
 
             var result = new List<OrdonnanceDTOs>();
 
-            // Pour chaque ordonnance, récupérer le nom du pharmacien
             foreach (var o in ordonnances)
             {
                 var pharmacien = await _userManager.FindByIdAsync(o.PharmacienId);
@@ -47,7 +46,8 @@ namespace project.Controllers
                         ? (!string.IsNullOrEmpty(pharmacien.Nom) ? pharmacien.Nom : pharmacien.UserName)
                         : "Inconnu",
                     PatientId = o.PatientId,
-                    MedicamentIds = o.OrdonnanceMedicaments.Select(om => om.MedicamentId).ToList()
+                    MedicamentIds = o.OrdonnanceMedicaments.Select(om => om.MedicamentId).ToList(),
+                    MedicamentQuantites = o.OrdonnanceMedicaments.ToDictionary(om => om.MedicamentId, om => om.Quantite)
                 });
             }
 
@@ -79,7 +79,8 @@ namespace project.Controllers
                 PharmacienId = o.PharmacienId,
                 PharmacienNom = pharmacienNom,
                 PatientId = o.PatientId,
-                MedicamentIds = o.OrdonnanceMedicaments.Select(om => om.MedicamentId).ToList()
+                MedicamentIds = o.OrdonnanceMedicaments.Select(om => om.MedicamentId).ToList(),
+                MedicamentQuantites = o.OrdonnanceMedicaments.ToDictionary(om => om.MedicamentId, om => om.Quantite)
             }).ToList();
 
             return Ok(result);
@@ -96,7 +97,6 @@ namespace project.Controllers
 
             if (o == null) return NotFound("Ordonnance non trouvée");
 
-            // Récupérer le pharmacien
             var pharmacien = await _userManager.FindByIdAsync(o.PharmacienId);
 
             var dto = new OrdonnanceDTOs
@@ -108,7 +108,8 @@ namespace project.Controllers
                     ? (!string.IsNullOrEmpty(pharmacien.Nom) ? pharmacien.Nom : pharmacien.UserName)
                     : "Inconnu",
                 PatientId = o.PatientId,
-                MedicamentIds = o.OrdonnanceMedicaments.Select(om => om.MedicamentId).ToList()
+                MedicamentIds = o.OrdonnanceMedicaments.Select(om => om.MedicamentId).ToList(),
+                MedicamentQuantites = o.OrdonnanceMedicaments.ToDictionary(om => om.MedicamentId, om => om.Quantite)
             };
 
             return Ok(dto);
@@ -121,19 +122,17 @@ namespace project.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            // Récupérer le pharmacien connecté (ou utiliser l'ID fourni dans le DTO)
+            // Récupérer le pharmacien connecté
             string pharmacienId;
             ApplicationUser pharmacien;
 
             if (!string.IsNullOrEmpty(dto.PharmacienId))
             {
-                // Si un PharmacienId est fourni dans le DTO, l'utiliser
                 pharmacienId = dto.PharmacienId;
                 pharmacien = await _userManager.FindByIdAsync(pharmacienId);
             }
             else
             {
-                // Sinon, utiliser le pharmacien connecté
                 var username = User.Identity.Name;
                 pharmacien = await _userManager.FindByNameAsync(username);
                 pharmacienId = pharmacien?.Id;
@@ -157,18 +156,36 @@ namespace project.Controllers
             await _context.Ordonnances.AddAsync(ordonnance);
             await _context.SaveChangesAsync();
 
-            // Ajouter les médicaments à la table de jonction
-            if (dto.MedicamentIds != null && dto.MedicamentIds.Any())
+            // Ajouter les médicaments avec leurs quantités et décrémenter le stock
+            if (dto.MedicamentQuantites != null && dto.MedicamentQuantites.Any())
             {
-                foreach (var medId in dto.MedicamentIds)
+                foreach (var item in dto.MedicamentQuantites)
                 {
+                    int medId = item.Key;
+                    int quantite = item.Value;
+
+                    // Vérifier si le médicament existe
+                    var medicament = await _context.Medicaments.FindAsync(medId);
+                    if (medicament == null)
+                        return BadRequest($"Le médicament avec l'ID {medId} n'existe pas");
+
+                    // Vérifier si le stock est suffisant
+                    if (medicament.Quantite < quantite)
+                        return BadRequest($"Stock insuffisant pour {medicament.Nom}. Disponible: {medicament.Quantite}, Demandé: {quantite}");
+
+                    // Décrémenter le stock
+                    medicament.Quantite -= quantite;
+
+                    // Ajouter à la table de jonction
                     var ordonnanceMedicament = new OrdonnanceMedicament
                     {
                         OrdonnanceId = ordonnance.Id,
-                        MedicamentId = medId
+                        MedicamentId = medId,
+                        Quantite = quantite
                     };
                     await _context.OrdonnanceMedicaments.AddAsync(ordonnanceMedicament);
                 }
+
                 await _context.SaveChangesAsync();
             }
 
@@ -192,29 +209,50 @@ namespace project.Controllers
 
             if (ordonnance == null) return NotFound("Ordonnance non trouvée");
 
-            // Vérifier que c'est le pharmacien qui l'a créée
             var username = User.Identity.Name;
             var pharmacien = await _userManager.FindByNameAsync(username);
 
             if (ordonnance.PharmacienId != pharmacien.Id)
                 return Forbid("Vous ne pouvez modifier que vos propres ordonnances");
 
+            // Restore stock for old medicaments
+            foreach (var oldItem in ordonnance.OrdonnanceMedicaments)
+            {
+                var medicament = await _context.Medicaments.FindAsync(oldItem.MedicamentId);
+                if (medicament != null)
+                {
+                    medicament.Quantite += oldItem.Quantite; // Restore stock
+                }
+            }
+
             ordonnance.Date = dto.Date;
             ordonnance.PatientId = dto.PatientId;
 
-            // Mettre à jour les médicaments
-            // Supprimer les anciennes associations
+            // Remove old associations
             _context.OrdonnanceMedicaments.RemoveRange(ordonnance.OrdonnanceMedicaments);
 
-            // Ajouter les nouvelles associations
-            if (dto.MedicamentIds != null && dto.MedicamentIds.Any())
+            // Add new associations and decrement stock
+            if (dto.MedicamentQuantites != null && dto.MedicamentQuantites.Any())
             {
-                foreach (var medId in dto.MedicamentIds)
+                foreach (var item in dto.MedicamentQuantites)
                 {
+                    int medId = item.Key;
+                    int quantite = item.Value;
+
+                    var medicament = await _context.Medicaments.FindAsync(medId);
+                    if (medicament == null)
+                        return BadRequest($"Le médicament avec l'ID {medId} n'existe pas");
+
+                    if (medicament.Quantite < quantite)
+                        return BadRequest($"Stock insuffisant pour {medicament.Nom}. Disponible: {medicament.Quantite}, Demandé: {quantite}");
+
+                    medicament.Quantite -= quantite;
+
                     var ordonnanceMedicament = new OrdonnanceMedicament
                     {
                         OrdonnanceId = ordonnance.Id,
-                        MedicamentId = medId
+                        MedicamentId = medId,
+                        Quantite = quantite
                     };
                     await _context.OrdonnanceMedicaments.AddAsync(ordonnanceMedicament);
                 }
@@ -230,17 +268,28 @@ namespace project.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteOrdonnance(int id)
         {
-            var ordonnance = await _context.Ordonnances.FindAsync(id);
+            var ordonnance = await _context.Ordonnances
+                .Include(o => o.OrdonnanceMedicaments)
+                .FirstOrDefaultAsync(o => o.Id == id);
+
             if (ordonnance == null) return NotFound("Ordonnance non trouvée");
 
-            // Vérifier que c'est le pharmacien qui l'a créée
             var username = User.Identity.Name;
             var pharmacien = await _userManager.FindByNameAsync(username);
 
             if (ordonnance.PharmacienId != pharmacien.Id)
                 return Forbid("Vous ne pouvez supprimer que vos propres ordonnances");
 
-            // Les OrdonnanceMedicaments seront supprimés automatiquement grâce à OnDelete(DeleteBehavior.Cascade)
+            // Restore stock when deleting
+            foreach (var item in ordonnance.OrdonnanceMedicaments)
+            {
+                var medicament = await _context.Medicaments.FindAsync(item.MedicamentId);
+                if (medicament != null)
+                {
+                    medicament.Quantite += item.Quantite; // Restore stock
+                }
+            }
+
             _context.Ordonnances.Remove(ordonnance);
             await _context.SaveChangesAsync();
 

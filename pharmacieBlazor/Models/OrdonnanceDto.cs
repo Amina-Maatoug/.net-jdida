@@ -12,10 +12,12 @@ namespace pharmacieBlazor.Models
         [Required(ErrorMessage = "Le patient est requis")]
         public int PatientId { get; set; }
 
-        // PharmacienId is now a string (Identity user ID)
         public string? PharmacienId { get; set; }
         public string? PharmacienNom { get; set; }
 
         public List<int> MedicamentIds { get; set; } = new();
+
+        // NEW: Dictionary to store quantity for each medicament
+        public Dictionary<int, int> MedicamentQuantites { get; set; } = new();
     }
 }

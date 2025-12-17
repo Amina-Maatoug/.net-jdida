@@ -45,24 +45,61 @@ else
         </div>
 
         <div class="mb-3">
-            <label class="form-label">Médicaments</label>
-            @foreach (var med in medicaments)
-            {
-                <div class="form-check">
-                    <input type="checkbox"
-                           class="form-check-input"
-                           id="med_@med.Id"
-                           checked="@ordonnance.MedicamentIds.Contains(med.Id)"
-                           @onchange="@(e => ToggleMedicament(med.Id, (bool)e.Value!))" />
-                    <label class="form-check-label" for="med_@med.Id">
-                        @med.Nom (@med.Dosage)
-                    </label>
+            <label class="form-label">Médicaments et Quantités</label>
+            <div class="card">
+                <div class="card-body">
+                    @foreach (var med in medicaments)
+                    {
+                        <div class="row mb-3 align-items-center">
+                            <div class="col-md-1">
+                                <input type="checkbox"
+                                       class="form-check-input"
+                                       id="med_@med.Id"
+                                       checked="@selectedMedicaments.ContainsKey(med.Id)"
+                                       @onchange="@(e => ToggleMedicament(med.Id, (bool)e.Value!, med))" />
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-check-label" for="med_@med.Id">
+                                    <strong>@med.Nom</strong> (@med.Dosage)
+                                    <br />
+                                    <small class="text-muted">Stock disponible: @med.Quantite</small>
+                                </label>
+                            </div>
+                            <div class="col-md-6">
+                                @if (selectedMedicaments.ContainsKey(med.Id))
+                                {
+                                    <div class="input-group">
+                                        <span class="input-group-text">Quantité</span>
+                                        <input type="number"
+                                               class="form-control"
+                                               min="1"
+                                               max="@med.Quantite"
+                                               @bind="selectedMedicaments[med.Id]"
+                                               @oninput="@(e => UpdateQuantity(med.Id, e.Value?.ToString()))" />
+                                        <span class="input-group-text">/ @med.Quantite</span>
+                                    </div>
+                                    @if (selectedMedicaments[med.Id] > med.Quantite)
+                                    {
+                                        <small class="text-danger">Stock insuffisant!</small>
+                                    }
+                                }
+                            </div>
+                        </div>
+                        <hr />
+                    }
+
+                    @if (!selectedMedicaments.Any())
+                    {
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> Veuillez sélectionner au moins un médicament
+                        </div>
+                    }
                 </div>
-            }
+            </div>
         </div>
 
         <div class="mb-3">
-            <button type="submit" class="btn btn-primary" disabled="@isSaving">
+            <button type="submit" class="btn btn-primary" disabled="@(isSaving || !selectedMedicaments.Any() || HasInsufficientStock())">
                 @if (isSaving)
                 {
                     <span class="spinner-border spinner-border-sm" role="status"></span>
@@ -92,6 +129,9 @@ else
     private bool isSaving = false;
     private bool isLoadingData = true;
 
+    // Track selected medicaments with their quantities
+    private Dictionary<int, int> selectedMedicaments = new();
+
     protected override async Task OnInitializedAsync()
     {
         await LoadReferenceData();
@@ -100,9 +140,15 @@ else
         {
             var existing = await OrdonnanceService.GetOrdonnanceByIdAsync(Id);
             if (existing != null)
+            {
                 ordonnance = existing;
+                // Load existing quantities
+                selectedMedicaments = new Dictionary<int, int>(ordonnance.MedicamentQuantites);
+            }
             else
+            {
                 Navigation.NavigateTo("/ordonnances");
+            }
         }
 
         isLoadingData = false;
@@ -122,21 +168,69 @@ else
         }
     }
 
-    private void ToggleMedicament(int medId, bool isChecked)
+    private void ToggleMedicament(int medId, bool isChecked, MedicamentDto med)
     {
-        if (isChecked && !ordonnance.MedicamentIds.Contains(medId))
-            ordonnance.MedicamentIds.Add(medId);
-        else if (!isChecked && ordonnance.MedicamentIds.Contains(medId))
-            ordonnance.MedicamentIds.Remove(medId);
+        if (isChecked)
+        {
+            if (!selectedMedicaments.ContainsKey(medId))
+            {
+                // Default quantity is 1
+                selectedMedicaments[medId] = 1;
+            }
+        }
+        else
+        {
+            selectedMedicaments.Remove(medId);
+        }
+    }
+
+    private void UpdateQuantity(int medId, string? value)
+    {
+        if (int.TryParse(value, out int quantity) && quantity > 0)
+        {
+            if (selectedMedicaments.ContainsKey(medId))
+            {
+                selectedMedicaments[medId] = quantity;
+            }
+        }
+    }
+
+    private bool HasInsufficientStock()
+    {
+        foreach (var item in selectedMedicaments)
+        {
+            var med = medicaments.FirstOrDefault(m => m.Id == item.Key);
+            if (med != null && item.Value > med.Quantite)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     private async Task HandleValidSubmit()
     {
+        if (!selectedMedicaments.Any())
+        {
+            Console.WriteLine("Erreur: Aucun médicament sélectionné");
+            return;
+        }
+
+        if (HasInsufficientStock())
+        {
+            Console.WriteLine("Erreur: Stock insuffisant pour certains médicaments");
+            return;
+        }
+
         isSaving = true;
         try
         {
             if (currentUser != null)
                 ordonnance.PharmacienId = currentUser.Id;
+
+            // Update the ordonnance with selected medicaments and quantities
+            ordonnance.MedicamentIds = selectedMedicaments.Keys.ToList();
+            ordonnance.MedicamentQuantites = new Dictionary<int, int>(selectedMedicaments);
 
             bool success = Id == 0
                 ? await OrdonnanceService.CreateOrdonnanceAsync(ordonnance)
