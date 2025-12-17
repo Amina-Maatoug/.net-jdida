@@ -4,24 +4,23 @@ using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using pharmacieBlazor;
 using pharmacieBlazor.Services;
 
-
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
-// IMPORTANT: Change this URL to your backend API URL
+// HttpClient points to HTTPS API
 builder.Services.AddScoped(sp => new HttpClient
 {
-    BaseAddress = new Uri("http://localhost:5100/") // 
+    BaseAddress = new Uri("https://localhost:7017/") // API HTTPS
 });
 
-// Register services
+// Services
 builder.Services.AddScoped<AccountService>();
 builder.Services.AddScoped<PatientService>();
 builder.Services.AddScoped<MedicamentService>();
 builder.Services.AddScoped<OrdonnanceService>();
 
-// Register authentication
+// Authentication
 builder.Services.AddAuthorizationCore();
 builder.Services.AddScoped<CustomAuthStateProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider>(provider =>
