@@ -12,7 +12,7 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 // IMPORTANT: Change this URL to your backend API URL
 builder.Services.AddScoped(sp => new HttpClient
 {
-    BaseAddress = new Uri("https://localhost:5100/") // 
+    BaseAddress = new Uri("http://localhost:5100/") // 
 });
 
 // Register services

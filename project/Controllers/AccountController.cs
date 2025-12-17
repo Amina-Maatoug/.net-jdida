@@ -24,7 +24,8 @@ namespace project.Controllers
                 this.configuration = configuration;
             }
             [HttpPost("Register")]
-            public async Task<IActionResult> Register(RegisterUserDTO userDto)
+            [AllowAnonymous]
+        public async Task<IActionResult> Register(RegisterUserDTO userDto)
             {
                 // 1. Vérifier la validité du modèle
                 if (!ModelState.IsValid)

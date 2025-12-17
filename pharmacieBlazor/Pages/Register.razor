@@ -1,0 +1,93 @@
+﻿@page "/register"
+@using pharmacieBlazor.Models
+@using pharmacieBlazor.Services
+@inject AccountService AccountService
+@inject NavigationManager Navigation
+
+<PageTitle>Créer un compte - Pharmacie</PageTitle>
+
+<h3 class="mb-4">
+    <i class="bi bi-person-plus"></i> Créer un compte
+</h3>
+
+<EditForm Model="@registerModel" OnValidSubmit="HandleRegister">
+    <DataAnnotationsValidator />
+    <ValidationSummary class="text-danger" />
+
+    <div class="mb-3">
+        <label class="form-label">Nom complet *</label>
+        <InputText class="form-control" @bind-Value="registerModel.Nom" />
+        <ValidationMessage For="@(() => registerModel.Nom)" class="text-danger" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Email *</label>
+        <InputText type="email" class="form-control" @bind-Value="registerModel.Email" />
+        <ValidationMessage For="@(() => registerModel.Email)" class="text-danger" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Mot de passe *</label>
+        <InputText type="password" class="form-control" @bind-Value="registerModel.Password" />
+        <ValidationMessage For="@(() => registerModel.Password)" class="text-danger" />
+    </div>
+
+    <button type="submit" class="btn btn-primary" disabled="@isSubmitting">
+        @if (isSubmitting)
+        {
+            <span class="spinner-border spinner-border-sm">Création...</span>
+            
+                }
+        else
+        {
+            <i class="bi bi-person-plus">Créer le compte</i>
+            
+                }
+    </button>
+    <button type="button" class="btn btn-secondary ms-2" @onclick="Cancel">Annuler</button>
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger mt-3">@errorMessage</div>
+    }
+</EditForm>
+
+@code {
+    private RegisterDto registerModel = new();
+    private bool isSubmitting = false;
+    private string errorMessage = string.Empty;
+
+    private async Task HandleRegister()
+    {
+        isSubmitting = true;
+        errorMessage = string.Empty;
+
+        try
+        {
+            var (Success, Message) = await AccountService.RegisterAsync(registerModel);
+
+            if (Success)
+            {
+                // redirect to login
+                Navigation.NavigateTo("/login");
+            }
+            else
+            {
+                errorMessage = Message;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Erreur : {ex.Message}";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        Navigation.NavigateTo("/");
+    }
+}

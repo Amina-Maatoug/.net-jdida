@@ -16,22 +16,22 @@ namespace project
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            // ===== Connection string =====
             var connectionString = builder.Configuration.GetConnectionString("cnx");
 
-            // ===== DbContext pour CRUD (travail de votre amie) =====
+            // ===== DbContexts =====
             builder.Services.AddDbContext<PharmacieDbContext>(
                 options => options.UseSqlServer(connectionString));
 
-            // ===== DbContext pour Identity (votre travail) =====
             builder.Services.AddDbContext<ApplicationDbContext>(
                 options => options.UseSqlServer(connectionString));
 
-            // ===== Identity Configuration =====
+            // ===== Identity =====
             builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
                 .AddEntityFrameworkStores<ApplicationDbContext>()
                 .AddDefaultTokenProviders();
 
-            // ===== Repositories (travail de votre amie) =====
+            // ===== Repositories =====
             builder.Services.AddScoped<IMedicamentRepository, MedicamentRepository>();
             builder.Services.AddScoped<IPatientRepository, PatientRepository>();
 
@@ -45,8 +45,8 @@ namespace project
             .AddJwtBearer(options =>
             {
                 options.SaveToken = true;
-                options.RequireHttpsMetadata = false;
-                options.TokenValidationParameters = new TokenValidationParameters()
+                options.RequireHttpsMetadata = false; // for dev
+                options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = true,
                     ValidateAudience = true,
@@ -69,7 +69,7 @@ namespace project
                     Description = "API avec JWT"
                 });
 
-                swagger.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme()
+                swagger.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
                     Name = "Authorization",
                     Type = SecuritySchemeType.ApiKey,
@@ -90,22 +90,29 @@ namespace project
                                 Id = "Bearer"
                             }
                         },
-                        new string[] {}
+                        Array.Empty<string>()
                     }
                 });
             });
 
+            // ===== Controllers =====
             builder.Services.AddControllers();
+
+            // ===== CORS =====
             builder.Services.AddCors(options =>
             {
-                options.AddPolicy("AllowAll", builder =>
+                options.AddPolicy("AllowBlazorDevClient", policy =>
                 {
-                    builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+                    policy.WithOrigins("http://localhost:5012") // your Blazor dev URL
+                          .AllowAnyMethod()
+                          .AllowAnyHeader()
+                          .AllowCredentials();
                 });
             });
 
             var app = builder.Build();
 
+            // ===== Middleware pipeline =====
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
@@ -113,12 +120,16 @@ namespace project
             }
 
             app.UseHttpsRedirection();
-            app.UseCors("AllowAll");
 
-            app.UseAuthentication();  
+            app.UseRouting(); // IMPORTANT: must come before UseCors
+
+            app.UseCors("AllowBlazorDevClient"); // Use CORS before authentication
+
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.MapControllers();
+
             app.Run();
         }
     }
