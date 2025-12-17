@@ -6,7 +6,7 @@ namespace pharmacieBlazor.Services
     public class AccountService
     {
         private readonly HttpClient _httpClient;
-        private readonly string _baseUrl = "http://localhost:5100/api/Account";
+        private readonly string _baseUrl = "api/Account";
 
         public AccountService(HttpClient httpClient)
         {
