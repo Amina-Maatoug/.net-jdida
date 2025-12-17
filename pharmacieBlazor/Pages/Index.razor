@@ -60,28 +60,13 @@
                         <i class="bi bi-person-badge text-info" style="font-size: 3rem;"></i>
                         <h5 class="card-title mt-3">Mon Profil</h5>
                         <p class="card-text">Voir mes informations</p>
-                        <a href="/profile" class="btn btn-info">
+                        <a href="/profil" class="btn btn-info">
                             <i class="bi bi-arrow-right-circle"></i> Accéder
                         </a>
                     </div>
                 </div>
             </div>
         </div>
-
-        @if (currentUser != null)
-        {
-            <div class="alert alert-info mt-5">
-                <h5 class="alert-heading">
-                    <i class="bi bi-person-circle"></i> Connecté en tant que
-                </h5>
-                <hr>
-                <p class="mb-0">
-                    <strong>Nom:</strong> @currentUser.Nom<br />
-                    <strong>Email:</strong> @currentUser.Email<br />
-                    <strong>Nom d'utilisateur:</strong> @currentUser.UserName
-                </p>
-            </div>
-        }
     </Authorized>
     <NotAuthorized>
         <div class="alert alert-warning">
@@ -94,34 +79,6 @@
                 <i class="bi bi-box-arrow-in-right"></i> Se connecter
             </a>
             <p>Pas encore de compte ? <a href="/register">Créer un compte</a></p>
-
         </div>
     </NotAuthorized>
 </AuthorizeView>
-
-<div class="mt-5 p-4 bg-light rounded">
-    <h4><i class="bi bi-info-circle"></i> Fonctionnalités</h4>
-    <ul class="list-unstyled">
-        <li><i class="bi bi-check-circle-fill text-success"></i> Gestion complète des patients</li>
-        <li><i class="bi bi-check-circle-fill text-success"></i> Catalogue de médicaments</li>
-        <li><i class="bi bi-check-circle-fill text-success"></i> Création d'ordonnances</li>
-        <li><i class="bi bi-check-circle-fill text-success"></i> Gestion sécurisée des utilisateurs</li>
-        <li><i class="bi bi-check-circle-fill text-success"></i> Interface intuitive et moderne</li>
-    </ul>
-</div>
-
-@code {
-    private UserProfileDto? currentUser;
-
-    protected override async Task OnInitializedAsync()
-    {
-        try
-        {
-            currentUser = await AccountService.GetMonProfilAsync();
-        }
-        catch
-        {
-            currentUser = null;
-        }
-    }
-}

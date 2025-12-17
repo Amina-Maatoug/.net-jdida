@@ -1,0 +1,29 @@
+﻿@page "/profil"
+@inject AccountService AccountService
+@using pharmacieBlazor.Models
+@using pharmacieBlazor.Services
+@inject AccountService AccountService
+
+<PageTitle>Mon Profil</PageTitle>
+
+<h3 class="mb-4">Mon Profil</h3>
+
+@if (user == null)
+{
+    <p>Chargement des informations...</p>
+}
+else
+{
+    <div class="card shadow p-3">
+        <p><strong>Email:</strong> @user.Email</p>
+        <p><strong>Nom d'utilisateur:</strong> @user.UserName</p>
+    </div>
+}
+@code {
+    private UserProfileDto? user;
+
+    protected override async Task OnInitializedAsync()
+    {
+        user = await AccountService.GetMonProfilAsync();
+    }
+}
