@@ -1,0 +1,97 @@
+﻿@attribute [Authorize]
+@using Microsoft.AspNetCore.Authorization
+@page "/ordonnances/details/{Id:int}"
+@using pharmacieBlazor.Models
+@using Front.Services
+@inject OrdonnanceService OrdonnanceService
+@inject NavigationManager Navigation
+
+<h3>
+    <i class="bi bi-file-earmark-medical"></i> Détails de l'Ordonnance
+</h3>
+
+@if (isLoading)
+{
+    <div class="text-center">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Chargement...</span>
+        </div>
+    </div>
+}
+else if (ordonnance == null)
+{
+    <div class="alert alert-danger">
+        <i class="bi bi-exclamation-triangle"></i> Ordonnance non trouvée.
+    </div>
+}
+else
+{
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Ordonnance #@ordonnance.Id</h5>
+        </div>
+        <div class="card-body">
+            <dl class="row">
+                <dt class="col-sm-3">ID:</dt>
+                <dd class="col-sm-9">@ordonnance.Id</dd>
+
+                <dt class="col-sm-3">Date:</dt>
+                <dd class="col-sm-9">@ordonnance.Date.ToString("dd/MM/yyyy")</dd>
+
+                <dt class="col-sm-3">Patient ID:</dt>
+                <dd class="col-sm-9">@ordonnance.PatientId</dd>
+
+                <dt class="col-sm-3">Pharmacien:</dt>
+                <dd class="col-sm-9">@(ordonnance.PharmacienNom ?? ordonnance.PharmacienId ?? "Non assigné")</dd>
+
+                <dt class="col-sm-3">Nombre de médicaments:</dt>
+                <dd class="col-sm-9">
+                    <span class="badge bg-info">@ordonnance.MedicamentIds.Count</span>
+                </dd>
+
+                @if (ordonnance.MedicamentIds.Any())
+                {
+                    <dt class="col-sm-3">IDs des médicaments:</dt>
+                    <dd class="col-sm-9">
+                        @foreach (var medId in ordonnance.MedicamentIds)
+                        {
+                            <span class="badge bg-secondary me-1">@medId</span>
+                        }
+                    </dd>
+                }
+            </dl>
+        </div>
+        <div class="card-footer">
+            <button class="btn btn-warning" @onclick="NavigateToEdit">
+                <i class="bi bi-pencil"></i> Modifier
+            </button>
+            <button class="btn btn-secondary" @onclick="NavigateToList">
+                <i class="bi bi-arrow-left"></i> Retour à la liste
+            </button>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private OrdonnanceDto? ordonnance;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        ordonnance = await OrdonnanceService.GetOrdonnanceByIdAsync(Id);
+        isLoading = false;
+    }
+
+    private void NavigateToEdit()
+    {
+        Navigation.NavigateTo($"/ordonnances/edit/{Id}");
+    }
+
+    private void NavigateToList()
+    {
+        Navigation.NavigateTo("/ordonnances");
+    }
+}

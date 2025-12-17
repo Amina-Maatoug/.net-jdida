@@ -1,0 +1,135 @@
+﻿@attribute [Authorize]
+@using Microsoft.AspNetCore.Authorization
+@page "/ordonnances"
+@using pharmacieBlazor.Models
+@using Front.Services
+@inject OrdonnanceService OrdonnanceService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<h3 class="mb-4">
+    <i class="bi bi-file-earmark-medical"></i> Liste des Ordonnances
+</h3>
+
+<div class="mb-3">
+    <button class="btn btn-primary" @onclick="NavigateToCreate">
+        <i class="bi bi-plus-circle"></i> Nouvelle Ordonnance
+    </button>
+</div>
+
+@if (isLoading)
+{
+    <div class="text-center">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Chargement...</span>
+        </div>
+        <p>Chargement des ordonnances...</p>
+    </div>
+}
+else if (ordonnances == null || !ordonnances.Any())
+{
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> Aucune ordonnance trouvée.
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Date</th>
+                    <th>Patient ID</th>
+                    <th>Pharmacien</th>
+                    <th>Médicaments</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var ordonnance in ordonnances)
+                {
+                    <tr>
+                        <td>@ordonnance.Id</td>
+                        <td>@ordonnance.Date.ToString("dd/MM/yyyy")</td>
+                        <td>@ordonnance.PatientId</td>
+                        <td>@(ordonnance.PharmacienNom ?? ordonnance.PharmacienId ?? "Non assigné")</td>
+                        <td>
+                            <span class="badge bg-info">@ordonnance.MedicamentIds.Count</span>
+                        </td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <button class="btn btn-sm btn-info"
+                                        @onclick="() => NavigateToDetails(ordonnance.Id)"
+                                        title="Voir les détails">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                                <button class="btn btn-sm btn-warning"
+                                        @onclick="() => NavigateToEdit(ordonnance.Id)"
+                                        title="Modifier">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger"
+                                        @onclick="() => DeleteOrdonnance(ordonnance.Id)"
+                                        title="Supprimer">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="alert alert-secondary">
+        <strong>Total:</strong> @ordonnances.Count ordonnance(s)
+    </div>
+}
+
+@code {
+    private List<OrdonnanceDto>? ordonnances;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadOrdonnances();
+    }
+
+    private async Task LoadOrdonnances()
+    {
+        isLoading = true;
+        ordonnances = await OrdonnanceService.GetAllOrdonnancesAsync();
+        isLoading = false;
+    }
+
+    private void NavigateToCreate()
+    {
+        Navigation.NavigateTo("/ordonnances/create");
+    }
+
+    private void NavigateToDetails(int id)
+    {
+        Navigation.NavigateTo($"/ordonnances/details/{id}");
+    }
+
+    private void NavigateToEdit(int id)
+    {
+        Navigation.NavigateTo($"/ordonnances/edit/{id}");
+    }
+
+    private async Task DeleteOrdonnance(int id)
+    {
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm",
+            "Êtes-vous sûr de vouloir supprimer cette ordonnance ?");
+
+        if (confirmed)
+        {
+            var success = await OrdonnanceService.DeleteOrdonnanceAsync(id);
+            if (success)
+            {
+                await LoadOrdonnances();
+            }
+        }
+    }
+}

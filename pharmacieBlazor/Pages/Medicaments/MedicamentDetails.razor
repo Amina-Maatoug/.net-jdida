@@ -1,0 +1,81 @@
+﻿@attribute [Authorize]
+@using Microsoft.AspNetCore.Authorization
+@page "/medicaments/details/{Id:int}"
+@using pharmacieBlazor.Models
+@using Front.Services
+@inject MedicamentService MedicamentService
+@inject NavigationManager Navigation
+
+<h3>
+    <i class="bi bi-capsule"></i> Détails du Médicament
+</h3>
+
+@if (isLoading)
+{
+    <div class="text-center">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Chargement...</span>
+        </div>
+    </div>
+}
+else if (medicament == null)
+{
+    <div class="alert alert-danger">
+        <i class="bi bi-exclamation-triangle"></i> Médicament non trouvé.
+    </div>
+}
+else
+{
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">@medicament.Nom</h5>
+        </div>
+        <div class="card-body">
+            <dl class="row">
+                <dt class="col-sm-3">ID:</dt>
+                <dd class="col-sm-9">@medicament.Id</dd>
+
+                <dt class="col-sm-3">Nom:</dt>
+                <dd class="col-sm-9">@medicament.Nom</dd>
+
+                <dt class="col-sm-3">Dosage:</dt>
+                <dd class="col-sm-9">@medicament.Dosage</dd>
+
+                <dt class="col-sm-3">Ordonnance ID:</dt>
+                <dd class="col-sm-9">@medicament.OrdonnanceId</dd>
+            </dl>
+        </div>
+        <div class="card-footer">
+            <button class="btn btn-warning" @onclick="NavigateToEdit">
+                <i class="bi bi-pencil"></i> Modifier
+            </button>
+            <button class="btn btn-secondary" @onclick="NavigateToList">
+                <i class="bi bi-arrow-left"></i> Retour à la liste
+            </button>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private MedicamentDto? medicament;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        medicament = await MedicamentService.GetMedicamentByIdAsync(Id);
+        isLoading = false;
+    }
+
+    private void NavigateToEdit()
+    {
+        Navigation.NavigateTo($"/medicaments/edit/{Id}");
+    }
+
+    private void NavigateToList()
+    {
+        Navigation.NavigateTo("/medicaments");
+    }
+}

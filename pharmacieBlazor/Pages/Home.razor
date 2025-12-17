@@ -1,0 +1,126 @@
+﻿@page "/"
+@using pharmacieBlazor.Models
+@using pharmacieBlazor.Services
+@inject AccountService AccountService
+
+<PageTitle>Accueil - Pharmacie</PageTitle>
+
+<div class="text-center mb-5">
+    <h1 class="display-4">
+        <i class="bi bi-hospital"></i> Système de Gestion de Pharmacie
+    </h1>
+    <p class="lead text-muted">Bienvenue dans votre application de gestion</p>
+</div>
+
+<AuthorizeView>
+    <Authorized>
+        <div class="row g-4">
+            <div class="col-md-6 col-lg-3">
+                <div class="card text-center shadow-sm h-100">
+                    <div class="card-body">
+                        <i class="bi bi-people-fill text-primary" style="font-size: 3rem;"></i>
+                        <h5 class="card-title mt-3">Patients</h5>
+                        <p class="card-text">Gérer les informations des patients</p>
+                        <a href="/patients" class="btn btn-primary">
+                            <i class="bi bi-arrow-right-circle"></i> Accéder
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-lg-3">
+                <div class="card text-center shadow-sm h-100">
+                    <div class="card-body">
+                        <i class="bi bi-capsule text-success" style="font-size: 3rem;"></i>
+                        <h5 class="card-title mt-3">Médicaments</h5>
+                        <p class="card-text">Consulter et gérer le catalogue</p>
+                        <a href="/medicaments" class="btn btn-success">
+                            <i class="bi bi-arrow-right-circle"></i> Accéder
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-lg-3">
+                <div class="card text-center shadow-sm h-100">
+                    <div class="card-body">
+                        <i class="bi bi-file-earmark-medical text-warning" style="font-size: 3rem;"></i>
+                        <h5 class="card-title mt-3">Ordonnances</h5>
+                        <p class="card-text">Créer et gérer les ordonnances</p>
+                        <a href="/ordonnances" class="btn btn-warning">
+                            <i class="bi bi-arrow-right-circle"></i> Accéder
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-lg-3">
+                <div class="card text-center shadow-sm h-100">
+                    <div class="card-body">
+                        <i class="bi bi-person-badge text-info" style="font-size: 3rem;"></i>
+                        <h5 class="card-title mt-3">Mon Profil</h5>
+                        <p class="card-text">Voir mes informations</p>
+                        <a href="/profile" class="btn btn-info">
+                            <i class="bi bi-arrow-right-circle"></i> Accéder
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @if (currentUser != null)
+        {
+            <div class="alert alert-info mt-5">
+                <h5 class="alert-heading">
+                    <i class="bi bi-person-circle"></i> Connecté en tant que
+                </h5>
+                <hr>
+                <p class="mb-0">
+                    <strong>Nom:</strong> @currentUser.Nom<br />
+                    <strong>Email:</strong> @currentUser.Email<br />
+                    <strong>Nom d'utilisateur:</strong> @currentUser.UserName
+                </p>
+            </div>
+        }
+    </Authorized>
+    <NotAuthorized>
+        <div class="alert alert-warning">
+            <h4 class="alert-heading">
+                <i class="bi bi-exclamation-triangle"></i> Non connecté
+            </h4>
+            <p>Vous devez vous connecter pour accéder aux fonctionnalités de l'application.</p>
+            <hr>
+            <a href="/login" class="btn btn-warning">
+                <i class="bi bi-box-arrow-in-right"></i> Se connecter
+            </a>
+        </div>
+    </NotAuthorized>
+</AuthorizeView>
+
+<div class="mt-5 p-4 bg-light rounded">
+    <h4><i class="bi bi-info-circle"></i> Fonctionnalités</h4>
+    <ul class="list-unstyled">
+        <li><i class="bi bi-check-circle-fill text-success"></i> Gestion complète des patients</li>
+        <li><i class="bi bi-check-circle-fill text-success"></i> Catalogue de médicaments</li>
+        <li><i class="bi bi-check-circle-fill text-success"></i> Création d'ordonnances</li>
+        <li><i class="bi bi-check-circle-fill text-success"></i> Gestion sécurisée des utilisateurs</li>
+        <li><i class="bi bi-check-circle-fill text-success"></i> Interface intuitive et moderne</li>
+    </ul>
+</div>
+
+@code {
+    private UserProfileDto? currentUser;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            currentUser = await AccountService.GetMonProfilAsync();
+        }
+        catch
+        {
+            // User not logged in or error getting profile
+            currentUser = null;
+        }
+    }
+}
