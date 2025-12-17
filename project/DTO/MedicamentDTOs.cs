@@ -12,7 +12,8 @@ namespace project.DTO
         [Required(ErrorMessage = "Le dosage du médicament est requis")]
         public string Dosage { get; set; }
 
-        [Required(ErrorMessage = "L'ID de l'ordonnance est requis")]
-        public int OrdonnanceId { get; set; }
+        [Required(ErrorMessage = "La quantité est requise")]
+        [Range(1, 10000, ErrorMessage = "La quantité doit être entre 1 et 10000")]
+        public int Quantite { get; set; }
     }
 }

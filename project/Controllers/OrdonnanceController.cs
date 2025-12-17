@@ -13,10 +13,10 @@ namespace project.Controllers
     [Route("api/[controller]")]
     public class OrdonnanceController : ControllerBase
     {
-        private readonly PharmacieDbContext _context;
+        private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
 
-        public OrdonnanceController(PharmacieDbContext context, UserManager<ApplicationUser> userManager)
+        public OrdonnanceController(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
         {
             _context = context;
             _userManager = userManager;
@@ -27,7 +27,7 @@ namespace project.Controllers
         public async Task<IActionResult> GetAllOrdonnances()
         {
             var ordonnances = await _context.Ordonnances
-                .Include(o => o.Medicaments)
+                .Include(o => o.OrdonnanceMedicaments) // Changed from Medicaments
                 .Include(o => o.Patient)
                 .ToListAsync();
 
@@ -45,7 +45,7 @@ namespace project.Controllers
                     PharmacienId = o.PharmacienId,
                     PharmacienNom = pharmacien?.Nom ?? "Inconnu",
                     PatientId = o.PatientId,
-                    MedicamentIds = o.Medicaments.Select(m => m.Id).ToList()
+                    MedicamentIds = o.OrdonnanceMedicaments.Select(om => om.MedicamentId).ToList() // Changed
                 });
             }
 
@@ -63,7 +63,7 @@ namespace project.Controllers
                 return Unauthorized("Pharmacien non trouvé");
 
             var ordonnances = await _context.Ordonnances
-                .Include(o => o.Medicaments)
+                .Include(o => o.OrdonnanceMedicaments) // Changed from Medicaments
                 .Include(o => o.Patient)
                 .Where(o => o.PharmacienId == pharmacien.Id)
                 .ToListAsync();
@@ -75,7 +75,7 @@ namespace project.Controllers
                 PharmacienId = o.PharmacienId,
                 PharmacienNom = pharmacien.Nom,
                 PatientId = o.PatientId,
-                MedicamentIds = o.Medicaments.Select(m => m.Id).ToList()
+                MedicamentIds = o.OrdonnanceMedicaments.Select(om => om.MedicamentId).ToList() // Changed
             }).ToList();
 
             return Ok(result);
@@ -86,7 +86,7 @@ namespace project.Controllers
         public async Task<IActionResult> GetOrdonnanceById(int id)
         {
             var o = await _context.Ordonnances
-                .Include(ord => ord.Medicaments)
+                .Include(ord => ord.OrdonnanceMedicaments) // Changed from Medicaments
                 .Include(ord => ord.Patient)
                 .FirstOrDefaultAsync(ord => ord.Id == id);
 
@@ -102,7 +102,7 @@ namespace project.Controllers
                 PharmacienId = o.PharmacienId,
                 PharmacienNom = pharmacien?.Nom ?? "Inconnu",
                 PatientId = o.PatientId,
-                MedicamentIds = o.Medicaments.Select(m => m.Id).ToList()
+                MedicamentIds = o.OrdonnanceMedicaments.Select(om => om.MedicamentId).ToList() // Changed
             };
 
             return Ok(dto);
@@ -115,9 +115,23 @@ namespace project.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            // Récupérer le pharmacien connecté
-            var username = User.Identity.Name;
-            var pharmacien = await _userManager.FindByNameAsync(username);
+            // Récupérer le pharmacien connecté (ou utiliser l'ID fourni dans le DTO)
+            string pharmacienId;
+            ApplicationUser pharmacien;
+
+            if (!string.IsNullOrEmpty(dto.PharmacienId))
+            {
+                // Si un PharmacienId est fourni dans le DTO, l'utiliser
+                pharmacienId = dto.PharmacienId;
+                pharmacien = await _userManager.FindByIdAsync(pharmacienId);
+            }
+            else
+            {
+                // Sinon, utiliser le pharmacien connecté
+                var username = User.Identity.Name;
+                pharmacien = await _userManager.FindByNameAsync(username);
+                pharmacienId = pharmacien?.Id;
+            }
 
             if (pharmacien == null)
                 return Unauthorized("Pharmacien non trouvé");
@@ -130,15 +144,30 @@ namespace project.Controllers
             var ordonnance = new Ordonnance
             {
                 Date = dto.Date,
-                PharmacienId = pharmacien.Id,  // Simple string - pas de relation!
+                PharmacienId = pharmacienId,
                 PatientId = dto.PatientId
             };
 
             await _context.Ordonnances.AddAsync(ordonnance);
-            await _context.SaveChangesAsync();  // ← Devrait marcher maintenant!
+            await _context.SaveChangesAsync();
+
+            // Ajouter les médicaments à la table de jonction
+            if (dto.MedicamentIds != null && dto.MedicamentIds.Any())
+            {
+                foreach (var medId in dto.MedicamentIds)
+                {
+                    var ordonnanceMedicament = new OrdonnanceMedicament
+                    {
+                        OrdonnanceId = ordonnance.Id,
+                        MedicamentId = medId
+                    };
+                    await _context.OrdonnanceMedicaments.AddAsync(ordonnanceMedicament);
+                }
+                await _context.SaveChangesAsync();
+            }
 
             dto.Id = ordonnance.Id;
-            dto.PharmacienId = pharmacien.Id;
+            dto.PharmacienId = pharmacienId;
             dto.PharmacienNom = pharmacien.Nom;
 
             return CreatedAtAction(nameof(GetOrdonnanceById), new { id = dto.Id }, dto);
@@ -151,7 +180,10 @@ namespace project.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var ordonnance = await _context.Ordonnances.FindAsync(dto.Id);
+            var ordonnance = await _context.Ordonnances
+                .Include(o => o.OrdonnanceMedicaments)
+                .FirstOrDefaultAsync(o => o.Id == dto.Id);
+
             if (ordonnance == null) return NotFound("Ordonnance non trouvée");
 
             // Vérifier que c'est le pharmacien qui l'a créée
@@ -163,6 +195,24 @@ namespace project.Controllers
 
             ordonnance.Date = dto.Date;
             ordonnance.PatientId = dto.PatientId;
+
+            // Mettre à jour les médicaments
+            // Supprimer les anciennes associations
+            _context.OrdonnanceMedicaments.RemoveRange(ordonnance.OrdonnanceMedicaments);
+
+            // Ajouter les nouvelles associations
+            if (dto.MedicamentIds != null && dto.MedicamentIds.Any())
+            {
+                foreach (var medId in dto.MedicamentIds)
+                {
+                    var ordonnanceMedicament = new OrdonnanceMedicament
+                    {
+                        OrdonnanceId = ordonnance.Id,
+                        MedicamentId = medId
+                    };
+                    await _context.OrdonnanceMedicaments.AddAsync(ordonnanceMedicament);
+                }
+            }
 
             _context.Ordonnances.Update(ordonnance);
             await _context.SaveChangesAsync();
@@ -184,6 +234,7 @@ namespace project.Controllers
             if (ordonnance.PharmacienId != pharmacien.Id)
                 return Forbid("Vous ne pouvez supprimer que vos propres ordonnances");
 
+            // Les OrdonnanceMedicaments seront supprimés automatiquement grâce à OnDelete(DeleteBehavior.Cascade)
             _context.Ordonnances.Remove(ordonnance);
             await _context.SaveChangesAsync();
 

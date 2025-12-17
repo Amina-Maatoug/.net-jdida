@@ -1,12 +1,8 @@
-﻿
-using global::project.DTO;
+﻿using global::project.DTO;
 using global::project.Models;
 using global::project.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-
-
-
 
 namespace project.Controllers
 {
@@ -27,15 +23,13 @@ namespace project.Controllers
         public async Task<IActionResult> GetAllMedicaments()
         {
             var medicaments = await _repository.GetAllAsync();
-
             var result = medicaments.Select(m => new MedicamentDTOs
             {
                 Id = m.Id,
                 Nom = m.Nom,
                 Dosage = m.Dosage,
-                OrdonnanceId = m.OrdonnanceId
+                Quantite = m.Quantite
             }).ToList();
-
             return Ok(result);
         }
 
@@ -51,9 +45,8 @@ namespace project.Controllers
                 Id = m.Id,
                 Nom = m.Nom,
                 Dosage = m.Dosage,
-                OrdonnanceId = m.OrdonnanceId
+                Quantite = m.Quantite
             };
-
             return Ok(dto);
         }
 
@@ -68,7 +61,7 @@ namespace project.Controllers
             {
                 Nom = dto.Nom,
                 Dosage = dto.Dosage,
-                OrdonnanceId = dto.OrdonnanceId
+                Quantite = dto.Quantite
             };
 
             await _repository.AddAsync(medicament);
@@ -89,7 +82,7 @@ namespace project.Controllers
 
             medicament.Nom = dto.Nom;
             medicament.Dosage = dto.Dosage;
-            medicament.OrdonnanceId = dto.OrdonnanceId;
+            medicament.Quantite = dto.Quantite;
 
             await _repository.UpdateAsync(medicament);
             return NoContent();
@@ -105,5 +98,5 @@ namespace project.Controllers
             await _repository.DeleteAsync(id);
             return NoContent();
         }
-    } } 
-
+    }
+}

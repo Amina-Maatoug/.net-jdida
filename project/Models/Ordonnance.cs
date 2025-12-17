@@ -11,16 +11,16 @@ namespace project.Models
         [Required]
         public DateTime Date { get; set; }
 
-        // Simple string - PAS de clé étrangère ni navigation property!
         [Required]
-        public string PharmacienId { get; set; }  // Juste l'ID, pas de relation
-
+        public string PharmacienId { get; set; }
 
         [Required]
         public int PatientId { get; set; }
+
         [ForeignKey("PatientId")]
         public Patient Patient { get; set; }
 
-        public List<Medicament> Medicaments { get; set; } = new List<Medicament>();
+        // Many-to-many relationship with Medicament
+        public ICollection<OrdonnanceMedicament> OrdonnanceMedicaments { get; set; } = new List<OrdonnanceMedicament>();
     }
 }

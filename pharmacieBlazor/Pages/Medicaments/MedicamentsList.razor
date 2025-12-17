@@ -41,7 +41,7 @@ else
                     <th>ID</th>
                     <th>Nom</th>
                     <th>Dosage</th>
-                    <th>Ordonnance ID</th>
+                    <th>Quantité</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -52,7 +52,9 @@ else
                         <td>@medicament.Id</td>
                         <td>@medicament.Nom</td>
                         <td>@medicament.Dosage</td>
-                        <td>@medicament.OrdonnanceId</td>
+                        <td>
+                            <span class="badge bg-info">@medicament.Quantite</span>
+                        </td>
                         <td>
                             <div class="btn-group" role="group">
                                 <button class="btn btn-sm btn-info"

@@ -34,9 +34,10 @@
                     </div>
 
                     <div class="mb-3">
-                        <label for="ordonnanceId" class="form-label">ID Ordonnance *</label>
-                        <InputNumber id="ordonnanceId" class="form-control" @bind-Value="medicament.OrdonnanceId" />
-                        <ValidationMessage For="@(() => medicament.OrdonnanceId)" class="text-danger" />
+                        <label for="quantite" class="form-label">Quantité *</label>
+                        <InputNumber id="quantite" class="form-control" @bind-Value="medicament.Quantite" />
+                        <ValidationMessage For="@(() => medicament.Quantite)" class="text-danger" />
+                        <small class="form-text text-muted">Nombre d'unités disponibles en stock</small>
                     </div>
 
                     <div class="mb-3">
@@ -66,7 +67,7 @@
     [Parameter]
     public int Id { get; set; }
 
-    private MedicamentDto medicament = new();
+    private MedicamentDto medicament = new() { Quantite = 1 };
     private bool isSaving = false;
 
     protected override async Task OnInitializedAsync()

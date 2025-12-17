@@ -1,5 +1,4 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace project.Models
 {
@@ -7,13 +6,17 @@ namespace project.Models
     {
         [Key]
         public int Id { get; set; }
-         [Required]
+
+        [Required]
         public string Nom { get; set; }
+
         [Required]
         public string Dosage { get; set; }
-        // Relation avec Ordonnance
-        public int OrdonnanceId { get; set; }
-        [ForeignKey("OrdonnanceId")]
-        public Ordonnance Ordonnance { get; set; }
+
+        [Required]
+        public int Quantite { get; set; }
+
+        // Many-to-many relationship with Ordonnance
+        public ICollection<OrdonnanceMedicament> OrdonnanceMedicaments { get; set; } = new List<OrdonnanceMedicament>();
     }
 }
