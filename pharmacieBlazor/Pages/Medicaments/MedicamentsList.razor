@@ -1,8 +1,8 @@
-﻿@attribute [Authorize]
+﻿@page "/medicaments"
 @using Microsoft.AspNetCore.Authorization
-@page "/medicaments"
 @using pharmacieBlazor.Models
-@using Front.Services
+@using pharmacieBlazor.Services
+@attribute [Authorize]
 @inject MedicamentService MedicamentService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
@@ -95,8 +95,19 @@ else
     private async Task LoadMedicaments()
     {
         isLoading = true;
-        medicaments = await MedicamentService.GetAllMedicamentsAsync();
-        isLoading = false;
+        try
+        {
+            medicaments = await MedicamentService.GetAllMedicamentsAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erreur récupération médicaments: {ex.Message}");
+            medicaments = new List<MedicamentDto>();
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private void NavigateToCreate()
@@ -121,10 +132,17 @@ else
 
         if (confirmed)
         {
-            var success = await MedicamentService.DeleteMedicamentAsync(id);
-            if (success)
+            try
             {
-                await LoadMedicaments();
+                var success = await MedicamentService.DeleteMedicamentAsync(id);
+                if (success)
+                {
+                    await LoadMedicaments();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Erreur suppression médicament: {ex.Message}");
             }
         }
     }

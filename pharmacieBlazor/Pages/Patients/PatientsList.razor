@@ -1,8 +1,8 @@
 ﻿@attribute [Authorize]
 @using Microsoft.AspNetCore.Authorization
-@page "/patients"
 @using pharmacieBlazor.Models
-@using Front.Services
+@using pharmacieBlazor.Services
+@page "/patients"
 @inject PatientService PatientService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
@@ -20,9 +20,7 @@
 @if (isLoading)
 {
     <div class="text-center">
-        <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Chargement...</span>
-        </div>
+        <div class="spinner-border text-primary" role="status"></div>
         <p>Chargement des patients...</p>
     </div>
 }
@@ -91,16 +89,24 @@ else
     private List<PatientDto>? patients;
     private bool isLoading = true;
 
-    protected override async Task OnInitializedAsync()
-    {
-        await LoadPatients();
-    }
+    protected override async Task OnInitializedAsync() => await LoadPatients();
 
     private async Task LoadPatients()
     {
         isLoading = true;
-        patients = await PatientService.GetAllPatientsAsync();
-        isLoading = false;
+        try
+        {
+            patients = await PatientService.GetAllPatientsAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erreur chargement patients : {ex.Message}");
+            patients = new List<PatientDto>();
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private int CalculateAge(DateTime birthDate)
@@ -111,33 +117,26 @@ else
         return age;
     }
 
-    private void NavigateToCreate()
-    {
-        Navigation.NavigateTo("/patients/create");
-    }
-
-    private void NavigateToDetails(int id)
-    {
-        Navigation.NavigateTo($"/patients/details/{id}");
-    }
-
-    private void NavigateToEdit(int id)
-    {
-        Navigation.NavigateTo($"/patients/edit/{id}");
-    }
+    private void NavigateToCreate() => Navigation.NavigateTo("/patients/create");
+    private void NavigateToDetails(int id) => Navigation.NavigateTo($"/patients/details/{id}");
+    private void NavigateToEdit(int id) => Navigation.NavigateTo($"/patients/edit/{id}");
 
     private async Task DeletePatient(int id)
     {
         var confirmed = await JSRuntime.InvokeAsync<bool>("confirm",
             "Êtes-vous sûr de vouloir supprimer ce patient ?");
 
-        if (confirmed)
+        if (!confirmed) return;
+
+        try
         {
             var success = await PatientService.DeletePatientAsync(id);
             if (success)
-            {
                 await LoadPatients();
-            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erreur suppression patient : {ex.Message}");
         }
     }
 }

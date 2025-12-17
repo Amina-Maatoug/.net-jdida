@@ -1,9 +1,9 @@
 ﻿@attribute [Authorize]
 @using Microsoft.AspNetCore.Authorization
+@using pharmacieBlazor.Models
+@using pharmacieBlazor.Services
 @page "/patients/create"
 @page "/patients/edit/{Id:int}"
-@using pharmacieBlazor.Models
-@using Front.Services
 @inject PatientService PatientService
 @inject NavigationManager Navigation
 
@@ -70,13 +70,17 @@
     {
         if (Id != 0)
         {
-            var existing = await PatientService.GetPatientByIdAsync(Id);
-            if (existing != null)
+            try
             {
-                patient = existing;
+                var existing = await PatientService.GetPatientByIdAsync(Id);
+                if (existing != null)
+                    patient = existing;
+                else
+                    Navigation.NavigateTo("/patients");
             }
-            else
+            catch (Exception ex)
             {
+                Console.WriteLine($"Erreur chargement patient : {ex.Message}");
                 Navigation.NavigateTo("/patients");
             }
         }
@@ -89,9 +93,7 @@
         {
             bool success;
             if (Id == 0)
-            {
                 success = await PatientService.CreatePatientAsync(patient);
-            }
             else
             {
                 patient.Id = Id;
@@ -99,9 +101,7 @@
             }
 
             if (success)
-            {
                 Navigation.NavigateTo("/patients");
-            }
         }
         catch (Exception ex)
         {
@@ -121,8 +121,5 @@
         return age;
     }
 
-    private void Cancel()
-    {
-        Navigation.NavigateTo("/patients");
-    }
+    private void Cancel() => Navigation.NavigateTo("/patients");
 }

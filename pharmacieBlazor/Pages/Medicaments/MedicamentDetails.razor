@@ -1,8 +1,8 @@
-﻿@attribute [Authorize]
+﻿@page "/medicaments/details/{Id:int}"
 @using Microsoft.AspNetCore.Authorization
-@page "/medicaments/details/{Id:int}"
 @using pharmacieBlazor.Models
-@using Front.Services
+@using pharmacieBlazor.Services
+@attribute [Authorize]
 @inject MedicamentService MedicamentService
 @inject NavigationManager Navigation
 
@@ -65,8 +65,18 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        medicament = await MedicamentService.GetMedicamentByIdAsync(Id);
-        isLoading = false;
+        try
+        {
+            medicament = await MedicamentService.GetMedicamentByIdAsync(Id);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erreur récupération médicament: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private void NavigateToEdit()

@@ -1,8 +1,8 @@
 ﻿@attribute [Authorize]
 @using Microsoft.AspNetCore.Authorization
-@page "/ordonnances"
 @using pharmacieBlazor.Models
-@using Front.Services
+@using pharmacieBlazor.Services
+@page "/ordonnances"
 @inject OrdonnanceService OrdonnanceService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
@@ -20,9 +20,7 @@
 @if (isLoading)
 {
     <div class="text-center">
-        <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Chargement...</span>
-        </div>
+        <div class="spinner-border text-primary" role="status"></div>
         <p>Chargement des ordonnances...</p>
     </div>
 }
@@ -60,18 +58,15 @@ else
                         <td>
                             <div class="btn-group" role="group">
                                 <button class="btn btn-sm btn-info"
-                                        @onclick="() => NavigateToDetails(ordonnance.Id)"
-                                        title="Voir les détails">
+                                        @onclick="() => NavigateToDetails(ordonnance.Id)">
                                     <i class="bi bi-eye"></i>
                                 </button>
                                 <button class="btn btn-sm btn-warning"
-                                        @onclick="() => NavigateToEdit(ordonnance.Id)"
-                                        title="Modifier">
+                                        @onclick="() => NavigateToEdit(ordonnance.Id)">
                                     <i class="bi bi-pencil"></i>
                                 </button>
                                 <button class="btn btn-sm btn-danger"
-                                        @onclick="() => DeleteOrdonnance(ordonnance.Id)"
-                                        title="Supprimer">
+                                        @onclick="() => DeleteOrdonnance(ordonnance.Id)">
                                     <i class="bi bi-trash"></i>
                                 </button>
                             </div>
@@ -98,25 +93,25 @@ else
 
     private async Task LoadOrdonnances()
     {
-        isLoading = true;
-        ordonnances = await OrdonnanceService.GetAllOrdonnancesAsync();
-        isLoading = false;
+        try
+        {
+            isLoading = true;
+            ordonnances = await OrdonnanceService.GetAllOrdonnancesAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erreur chargement ordonnances : {ex.Message}");
+            ordonnances = new List<OrdonnanceDto>();
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
-    private void NavigateToCreate()
-    {
-        Navigation.NavigateTo("/ordonnances/create");
-    }
-
-    private void NavigateToDetails(int id)
-    {
-        Navigation.NavigateTo($"/ordonnances/details/{id}");
-    }
-
-    private void NavigateToEdit(int id)
-    {
-        Navigation.NavigateTo($"/ordonnances/edit/{id}");
-    }
+    private void NavigateToCreate() => Navigation.NavigateTo("/ordonnances/create");
+    private void NavigateToDetails(int id) => Navigation.NavigateTo($"/ordonnances/details/{id}");
+    private void NavigateToEdit(int id) => Navigation.NavigateTo($"/ordonnances/edit/{id}");
 
     private async Task DeleteOrdonnance(int id)
     {
@@ -127,9 +122,7 @@ else
         {
             var success = await OrdonnanceService.DeleteOrdonnanceAsync(id);
             if (success)
-            {
                 await LoadOrdonnances();
-            }
         }
     }
 }

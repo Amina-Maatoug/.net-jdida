@@ -1,8 +1,8 @@
 ﻿@attribute [Authorize]
 @using Microsoft.AspNetCore.Authorization
-@page "/patients/details/{Id:int}"
 @using pharmacieBlazor.Models
-@using Front.Services
+@using pharmacieBlazor.Services
+@page "/patients/details/{Id:int}"
 @inject PatientService PatientService
 @inject NavigationManager Navigation
 
@@ -81,8 +81,20 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        patient = await PatientService.GetPatientByIdAsync(Id);
-        isLoading = false;
+        try
+        {
+            isLoading = true;
+            patient = await PatientService.GetPatientByIdAsync(Id);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erreur chargement patient : {ex.Message}");
+            patient = null;
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private int CalculateAge(DateTime birthDate)
@@ -93,13 +105,6 @@ else
         return age;
     }
 
-    private void NavigateToEdit()
-    {
-        Navigation.NavigateTo($"/patients/edit/{Id}");
-    }
-
-    private void NavigateToList()
-    {
-        Navigation.NavigateTo("/patients");
-    }
+    private void NavigateToEdit() => Navigation.NavigateTo($"/patients/edit/{Id}");
+    private void NavigateToList() => Navigation.NavigateTo("/patients");
 }

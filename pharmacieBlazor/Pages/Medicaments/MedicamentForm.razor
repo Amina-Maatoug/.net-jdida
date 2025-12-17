@@ -1,9 +1,9 @@
-﻿@attribute [Authorize]
-@using Microsoft.AspNetCore.Authorization
-@page "/medicaments/create"
+﻿@page "/medicaments/create"
 @page "/medicaments/edit/{Id:int}"
+@using Microsoft.AspNetCore.Authorization
 @using pharmacieBlazor.Models
-@using Front.Services
+@using pharmacieBlazor.Services
+@attribute [Authorize]
 @inject MedicamentService MedicamentService
 @inject NavigationManager Navigation
 
@@ -73,13 +73,21 @@
     {
         if (Id != 0)
         {
-            var existing = await MedicamentService.GetMedicamentByIdAsync(Id);
-            if (existing != null)
+            try
             {
-                medicament = existing;
+                var existing = await MedicamentService.GetMedicamentByIdAsync(Id);
+                if (existing != null)
+                {
+                    medicament = existing;
+                }
+                else
+                {
+                    Navigation.NavigateTo("/medicaments");
+                }
             }
-            else
+            catch (Exception ex)
             {
+                Console.WriteLine($"Erreur récupération médicament: {ex.Message}");
                 Navigation.NavigateTo("/medicaments");
             }
         }
