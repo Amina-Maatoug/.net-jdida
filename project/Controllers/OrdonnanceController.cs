@@ -27,7 +27,7 @@ namespace project.Controllers
         public async Task<IActionResult> GetAllOrdonnances()
         {
             var ordonnances = await _context.Ordonnances
-                .Include(o => o.OrdonnanceMedicaments) // Changed from Medicaments
+                .Include(o => o.OrdonnanceMedicaments)
                 .Include(o => o.Patient)
                 .ToListAsync();
 
@@ -43,9 +43,11 @@ namespace project.Controllers
                     Id = o.Id,
                     Date = o.Date,
                     PharmacienId = o.PharmacienId,
-                    PharmacienNom = pharmacien?.Nom ?? "Inconnu",
+                    PharmacienNom = pharmacien != null
+                        ? (!string.IsNullOrEmpty(pharmacien.Nom) ? pharmacien.Nom : pharmacien.UserName)
+                        : "Inconnu",
                     PatientId = o.PatientId,
-                    MedicamentIds = o.OrdonnanceMedicaments.Select(om => om.MedicamentId).ToList() // Changed
+                    MedicamentIds = o.OrdonnanceMedicaments.Select(om => om.MedicamentId).ToList()
                 });
             }
 
@@ -63,19 +65,21 @@ namespace project.Controllers
                 return Unauthorized("Pharmacien non trouvé");
 
             var ordonnances = await _context.Ordonnances
-                .Include(o => o.OrdonnanceMedicaments) // Changed from Medicaments
+                .Include(o => o.OrdonnanceMedicaments)
                 .Include(o => o.Patient)
                 .Where(o => o.PharmacienId == pharmacien.Id)
                 .ToListAsync();
+
+            var pharmacienNom = !string.IsNullOrEmpty(pharmacien.Nom) ? pharmacien.Nom : pharmacien.UserName;
 
             var result = ordonnances.Select(o => new OrdonnanceDTOs
             {
                 Id = o.Id,
                 Date = o.Date,
                 PharmacienId = o.PharmacienId,
-                PharmacienNom = pharmacien.Nom,
+                PharmacienNom = pharmacienNom,
                 PatientId = o.PatientId,
-                MedicamentIds = o.OrdonnanceMedicaments.Select(om => om.MedicamentId).ToList() // Changed
+                MedicamentIds = o.OrdonnanceMedicaments.Select(om => om.MedicamentId).ToList()
             }).ToList();
 
             return Ok(result);
@@ -86,7 +90,7 @@ namespace project.Controllers
         public async Task<IActionResult> GetOrdonnanceById(int id)
         {
             var o = await _context.Ordonnances
-                .Include(ord => ord.OrdonnanceMedicaments) // Changed from Medicaments
+                .Include(ord => ord.OrdonnanceMedicaments)
                 .Include(ord => ord.Patient)
                 .FirstOrDefaultAsync(ord => ord.Id == id);
 
@@ -100,9 +104,11 @@ namespace project.Controllers
                 Id = o.Id,
                 Date = o.Date,
                 PharmacienId = o.PharmacienId,
-                PharmacienNom = pharmacien?.Nom ?? "Inconnu",
+                PharmacienNom = pharmacien != null
+                    ? (!string.IsNullOrEmpty(pharmacien.Nom) ? pharmacien.Nom : pharmacien.UserName)
+                    : "Inconnu",
                 PatientId = o.PatientId,
-                MedicamentIds = o.OrdonnanceMedicaments.Select(om => om.MedicamentId).ToList() // Changed
+                MedicamentIds = o.OrdonnanceMedicaments.Select(om => om.MedicamentId).ToList()
             };
 
             return Ok(dto);
@@ -168,7 +174,7 @@ namespace project.Controllers
 
             dto.Id = ordonnance.Id;
             dto.PharmacienId = pharmacienId;
-            dto.PharmacienNom = pharmacien.Nom;
+            dto.PharmacienNom = !string.IsNullOrEmpty(pharmacien.Nom) ? pharmacien.Nom : pharmacien.UserName;
 
             return CreatedAtAction(nameof(GetOrdonnanceById), new { id = dto.Id }, dto);
         }
